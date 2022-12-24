@@ -1,60 +1,32 @@
-import requests
-import fitz
-import os
-from time import sleep
+import tkinter as tk
+from tkcalendar import DateEntry
+from  datetime import date
 
-headers = {
-    "accept": "application/json, text/plain, */*",
-    "accept-language": "pt-BR,pt;q=0.9",
-    "content-type": "application/json",
-    "sec-fetch-dest": "empty",
-    "sec-fetch-mode": "cors",
-    "sec-fetch-site": "same-origin",
-    "sec-gpc": "1",
-    "x-grau-instancia": "1",
-    "Referer": "https://pje.trt2.jus.br/consultaprocessual/pautas",
-    "Referrer-Policy": "no-referrer-when-downgrade",
-}
+root = tk.Tk(baseName="root")
 
-tokenCaptcha = "a72ddd0094ad56fd16f6d625feb4562ab703907a8a071daaf7892283950d4d0a"
+root.geometry("400x150")
+root.title("Descarregador de processos")
+root.configure(background='#262626')
 
-idOj = "2"
-data = "2022-12-19"
+root.columnconfigure(0, weight=2)
+root.columnconfigure(1, weight=2)
 
-urlOrgaos = "https://pje.trt2.jus.br/pje-consulta-api/api/orgaosjulgadores?somenteOJCs=true"
+lbX1 = tk.Label(root, text="Data inicial: ",
+                background='#262626', foreground="white")
+lbX1.grid(column=0, row=1, pady=10)
+cal1 = DateEntry(root,selectmode='day')
+cal1.grid(column=0, row=2, pady=5)
+cal1.set_date(date.today())
 
+lbY2 = tk.Label(root, text="Data final: ",
+                background='#262626', foreground="white")
+lbY2.grid(column=1, row=1, pady=10)
+cal2 = DateEntry(root,selectmode='day')
+cal2.grid(column=1, row=2, pady=5)
+cal2.set_date(date.today())
 
-orgaos = requests.get(urlOrgaos, headers=headers)
-orgaos = orgaos.json()
+init_btn = tk.Button(root, text="INICIAR DOWNLOAD DE PROCESSOS", command="init_inspector", width=40,
+                     height=2, bg="#2E4159", activebackground="#8F8EBF", disabledforeground="yellow", fg="white")
+init_btn.grid(columnspan=4, sticky=tk.W+tk.E, pady=15, padx=10)
 
-for orgao in orgaos:
-    if orgao.get("id"):
-        id = orgao["id"]
-
-        url = "https://pje.trt2.jus.br/pje-consulta-api/api/audiencias?pagina=1&tamanhoPagina=100&idOj=" + \
-            str(id) + "&data=" + data
-        req = requests.get(url, headers=headers)
-        req = req.json()
-
-        if req.get("resultado"):
-            for item in req["resultado"]:
-                file = requests.get(
-                    'https://pje.trt2.jus.br/pje-consulta-api/api/processos/'+ item["idProcesso"] +'/documentos/283356716?tokenCaptcha=' + tokenCaptcha, allow_redirects=True, headers=headers)
-
-                download = open(item["numeroProcesso"] + '.pdf', 'wb')
-                download.write(file.content)
-                download.close()
-
-                savePdf = False
-
-                with fitz.open(item["numeroProcesso"] + '.pdf') as pdf:
-                    for pagina in pdf:
-                        if 'perícia' in pagina.get_text():
-                            savePdf = True
-                            break
-
-                if not savePdf:
-                    os.remove(item["numeroProcesso"] + '.pdf')
-
-
-    print("--------------------------------------------------")
+root.mainloop()
