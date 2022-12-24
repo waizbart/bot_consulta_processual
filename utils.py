@@ -30,7 +30,7 @@ def getCaptchaToken(processId):
 
     if req2.get("tokenDesafio"):
         print("Erooou")
-        getCaptchaCode(processId)
+        getCaptchaToken(processId)
     else:
         print("Acertou")
         tokenCaptcha = req2headers['captchatoken']
@@ -38,11 +38,11 @@ def getCaptchaToken(processId):
 
 
 def getCaptchaCode(filename):
-    solver = TwoCaptcha('a076d4f3e8ff58bd089692ac1c50b8b6')
+    solver = TwoCaptcha('ee753880fba88538ae2972eaeb7b4aba')
 
     config = {
         'server':           '2captcha.com',
-        'apiKey':           'a076d4f3e8ff58bd089692ac1c50b8b6',
+        'apiKey':           'ee753880fba88538ae2972eaeb7b4aba',
         'softId':            123,
         'defaultTimeout':    120,
         'recaptchaTimeout':  600,
@@ -50,6 +50,8 @@ def getCaptchaCode(filename):
     }
 
     solver = TwoCaptcha(**config)
+
+    print("Getting captcha code...")
 
     result = solver.normal(filename)
 

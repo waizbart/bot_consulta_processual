@@ -36,7 +36,6 @@ def savePdfs(initialDate, finalDate):
                    for dt in lista_datas]
 
     print(lista_datas)
-    return
     orgaos = requests.get(urlOrgaos, headers=headers)
     orgaos = orgaos.json()
 
@@ -58,7 +57,7 @@ def savePdfs(initialDate, finalDate):
                             captchaToken = getCaptchaToken(idProcesso)
 
                             file = requests.get(
-                                'https://pje.trt2.jus.br/pje-consulta-api/api/processos/' + idProcesso + '/documentos/283356716?tokenCaptcha=' + captchaToken, allow_redirects=True, headers=headers)
+                                'https://pje.trt2.jus.br/pje-consulta-api/api/processos/' + str(idProcesso) + '/documentos/283356716?tokenCaptcha=' + captchaToken, allow_redirects=True, headers=headers)
 
                             download = open(
                                 item["numeroProcesso"] + '.pdf', 'wb')
