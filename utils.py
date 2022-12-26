@@ -29,10 +29,10 @@ def getCaptchaToken(processId):
     req2 = req2.json()
 
     if req2.get("tokenDesafio"):
-        print("Erooou")
+        print("Erro captcha")
         getCaptchaToken(processId)
     else:
-        print("Acertou")
+        print("Acertou captcha")
         tokenCaptcha = req2headers['captchatoken']
         return tokenCaptcha
 
