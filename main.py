@@ -4,7 +4,7 @@ from datetime import date, datetime
 import requests
 import fitz
 import os
-from utils import getCaptchaToken
+from utils import getCaptchaToken, getFoundsSolver
 from datetime import timedelta, datetime
 import threading
 import time
@@ -74,7 +74,6 @@ tipos = ["Inicial (rito sumaríssimo)", "Inicial por videoconferência",
 
 stop_thread = False
 
-
 def savePdfs(initialDate, finalDate):
 
     global stop_thread
@@ -82,6 +81,9 @@ def savePdfs(initialDate, finalDate):
     stop_thread = False
 
     try:
+        balance = getFoundsSolver()
+        log("Os fundos do 2captcha são: $" + str(balance))
+
         dif = finalDate - initialDate
 
         lista_datas = []
@@ -122,6 +124,11 @@ def savePdfs(initialDate, finalDate):
 
                                 log("Obtendo código captcha...")
                                 captchaToken = getCaptchaToken(idProcesso)
+
+                                if not captchaToken:
+                                    log("Erro no captcha")
+                                    return
+
                                 log("Código obtido.")
 
                                 processo = requests.get(
@@ -189,6 +196,7 @@ def stop_thread_fn():
 def init():
     global init_time
     log("Iniciando programa...")
+
     init_time = time.time()
     initialDate = sel1.get()
     finalDate = sel2.get()

@@ -20,46 +20,51 @@ def getCaptchaToken(processId):
         imageBase64 = req1["imagem"]
 
         saveImageBase64('captcha.png', imageBase64)
-
+        print("Gerando código captcha")
         captchaCode = getCaptchaCode('captcha.png')
 
-        req2 = requests.get("https://pje.trt2.jus.br/pje-consulta-api/api/processos/" + str(processId) + "?tokenDesafio=" +
-                            tokenDesafio + "&resposta=" + captchaCode)
+        if captchaCode:
+            req2 = requests.get("https://pje.trt2.jus.br/pje-consulta-api/api/processos/" + str(processId) + "?tokenDesafio=" +
+                                tokenDesafio + "&resposta=" + captchaCode)
 
-        req2headers = req2.headers
-        req2 = req2.json()
+            req2headers = req2.headers
+            req2 = req2.json()
 
-        if req2.get("tokenDesafio"):
-            print("Erro captcha")
-            return getCaptchaToken(processId)
-        else:
-            print("Acertou captcha")
-            tokenCaptcha = req2headers['captchatoken']
-            return tokenCaptcha
+            if req2.get("tokenDesafio"):
+                print("Erro captcha")
+                return getCaptchaToken(processId)
+            else:
+                print("Acertou captcha")
+                tokenCaptcha = req2headers['captchatoken']
+                return tokenCaptcha
 
     except Exception as e:
         print("Error", e)
-        return getCaptchaToken(processId)
 
 
 def getCaptchaCode(filename):
-    solver = TwoCaptcha('ee753880fba88538ae2972eaeb7b4aba')
+    try:
+        solver = TwoCaptcha('ee753880fba88538ae2972eaeb7b4aba')
 
-    config = {
-        'server':           '2captcha.com',
-        'apiKey':           'ee753880fba88538ae2972eaeb7b4aba',
-        'softId':            123,
-        'defaultTimeout':    120,
-        'recaptchaTimeout':  600,
-        'pollingInterval':   10,
-    }
+        print("Getting captcha code...")
 
-    solver = TwoCaptcha(**config)
+        result = solver.normal(filename)
 
-    print("Getting captcha code...")
+        os.remove(filename)
 
-    result = solver.normal(filename)
+        return result['code']
+    except Exception as e:
+        # invalid parameters passed
+        print("Exception", e)
 
-    os.remove(filename)
 
-    return result['code']
+def getFoundsSolver():
+    try:
+        solver = TwoCaptcha('ee753880fba88538ae2972eaeb7b4aba')
+
+        balance = solver.balance()
+
+        return balance
+    except Exception as e:
+        # invalid parameters passed
+        print("Exception", e)
