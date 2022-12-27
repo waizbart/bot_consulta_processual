@@ -12,29 +12,34 @@ def saveImageBase64(filename, imageBase64):
 
 
 def getCaptchaToken(processId):
-    req1 = requests.get(
-        "https://pje.trt2.jus.br/pje-consulta-api/api/processos/" + str(processId) + "")
-    req1 = req1.json()
-    tokenDesafio = req1["tokenDesafio"]
-    imageBase64 = req1["imagem"]
+    try:
+        req1 = requests.get(
+            "https://pje.trt2.jus.br/pje-consulta-api/api/processos/" + str(processId))
+        req1 = req1.json()
+        tokenDesafio = req1["tokenDesafio"]
+        imageBase64 = req1["imagem"]
 
-    saveImageBase64('captcha.png', imageBase64)
+        saveImageBase64('captcha.png', imageBase64)
 
-    captchaCode = getCaptchaCode('captcha.png')
+        captchaCode = getCaptchaCode('captcha.png')
 
-    req2 = requests.get("https://pje.trt2.jus.br/pje-consulta-api/api/processos/" + str(processId) + "?tokenDesafio=" +
-                        tokenDesafio + "&resposta=" + captchaCode)
+        req2 = requests.get("https://pje.trt2.jus.br/pje-consulta-api/api/processos/" + str(processId) + "?tokenDesafio=" +
+                            tokenDesafio + "&resposta=" + captchaCode)
 
-    req2headers = req2.headers
-    req2 = req2.json()
+        req2headers = req2.headers
+        req2 = req2.json()
 
-    if req2.get("tokenDesafio"):
-        print("Erro captcha")
-        getCaptchaToken(processId)
-    else:
-        print("Acertou captcha")
-        tokenCaptcha = req2headers['captchatoken']
-        return tokenCaptcha
+        if req2.get("tokenDesafio"):
+            print("Erro captcha")
+            return getCaptchaToken(processId)
+        else:
+            print("Acertou captcha")
+            tokenCaptcha = req2headers['captchatoken']
+            return tokenCaptcha
+
+    except Exception as e:
+        print("Error", e)
+        return getCaptchaToken(processId)
 
 
 def getCaptchaCode(filename):

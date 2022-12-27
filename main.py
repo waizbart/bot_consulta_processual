@@ -4,15 +4,19 @@ from datetime import date, datetime
 import requests
 import fitz
 import os
-from time import sleep
 from utils import getCaptchaToken
 from datetime import timedelta, datetime
 import threading
+import time
+
+epoch = 1545925769.9618232
+
+init_time = 0
 
 root = tk.Tk(baseName="root")
 
 root.geometry("400x350")
-root.title("Descarregador de processos")
+root.title("Robo Consulta TRT2")
 root.configure(background='#262626')
 
 root.columnconfigure(0, weight=2)
@@ -65,7 +69,7 @@ headers = {
 urlOrgaos = "https://pje.trt2.jus.br/pje-consulta-api/api/orgaosjulgadores?somenteOJCs=true"
 
 tipos = ["Inicial (rito sumaríssimo)", "Inicial por videoconferência",
-         "Una", "Una (rito sumaríssimo)"]
+         "Una", "Una (rito sumaríssimo)", "Una por videoconferência", "Una por videoconferência (rito sumaríssimo)"]
 
 
 stop_thread = False
@@ -88,7 +92,6 @@ def savePdfs(initialDate, finalDate):
         lista_datas = [datetime.strftime(dt, format="%Y-%m-%d")
                        for dt in lista_datas]
 
-        log(str(lista_datas))
         orgaos = requests.get(urlOrgaos, headers=headers)
         orgaos = orgaos.json()
 
@@ -99,7 +102,7 @@ def savePdfs(initialDate, finalDate):
 
                 if stop_thread:
                     break
-                
+
                 log("ORGÃO: " + str(orgao.get("descricao")))
                 if orgao.get("id"):
                     id = orgao["id"]
@@ -111,6 +114,8 @@ def savePdfs(initialDate, finalDate):
 
                     if req.get("resultado"):
                         for item in req["resultado"]:
+                            if stop_thread:
+                                break
                             if item["tipo"] in tipos:
                                 idProcesso = item["idProcesso"]
                                 log("Lendo processo id: " + str(idProcesso))
@@ -124,12 +129,16 @@ def savePdfs(initialDate, finalDate):
 
                                 processo = processo.json()
 
-                                filesProcesso = processo["itensProcesso"]
+                                filesProcesso = []
+                                if processo.get("itensProcesso"):
+                                    filesProcesso = processo.get(
+                                        "itensProcesso")
 
                                 idDocument = ''
 
                                 for f in filesProcesso:
-                                    if f["titulo"] == "Ata da Audiência":
+                                    if f["titulo"] == "Ata da Audiência" and f.get("documento") == True and f.get("tipoConteudo") == "PDF":
+
                                         idDocument = f["id"]
 
                                 if idDocument != '' and idDocument:
@@ -145,36 +154,42 @@ def savePdfs(initialDate, finalDate):
 
                                     with fitz.open(item["numeroProcesso"] + '.pdf') as pdf:
                                         for pagina in pdf:
-                                            if 'perícia' in pagina.get_text():
-                                                keyWords += 1
-                                                break
-
+                                            keyWords += pagina.get_text().count('perícia')
+                                    print("Numero palavras", keyWords)
                                     if keyWords < 2:
                                         os.remove(
                                             item["numeroProcesso"] + '.pdf')
                                         log(
-                                            "Documento não corresponde as exigências")
-
-                                    log(
-                                        "Documento " + item["numeroProcesso"] + ".pdf salvo!")
+                                            "Documento não corresponde às exigências")
+                                    else:
+                                        log(
+                                            "Documento " + item["numeroProcesso"] + ".pdf salvo!")
 
                     else:
                         log("Não há processos")
 
+        end_time = time.time()
+        log("Tempo de execução: " + str(end_time - init_time) + "s")
         stop_thread = True
 
     except Exception as e:
         log("Erro na execução: " + str(e))
+        print(e)
         stop_thread = False
+        init_btn["text"] = "INICIAR DOWNLOAD DE PROCESSOS"
+        init_btn["state"] = "normal"
 
 
 def stop_thread_fn():
     global stop_thread
+
     stop_thread = True
 
 
 def init():
+    global init_time
     log("Iniciando programa...")
+    init_time = time.time()
     initialDate = sel1.get()
     finalDate = sel2.get()
 
