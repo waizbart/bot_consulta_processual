@@ -8,6 +8,8 @@ from utils import getCaptchaToken, getFoundsSolver
 from datetime import timedelta, datetime
 import threading
 import time
+import re
+import csv
 
 epoch = 1545925769.9618232
 
@@ -28,14 +30,14 @@ sel2 = tk.StringVar()
 lbX1 = tk.Label(root, text="Data inicial: ",
                 background='#262626', foreground="white")
 lbX1.grid(column=0, row=1, pady=10)
-cal1 = DateEntry(root, selectmode='day', textvariable=sel1)
+cal1 = DateEntry(root, selectmode='day', textvariable=sel1, locale='pt_BR')
 cal1.grid(column=0, row=2, pady=5)
 cal1.set_date(date.today())
 
 lbY2 = tk.Label(root, text="Data final: ",
                 background='#262626', foreground="white")
 lbY2.grid(column=1, row=1, pady=10)
-cal2 = DateEntry(root, selectmode='day', textvariable=sel2)
+cal2 = DateEntry(root, selectmode='day', textvariable=sel2, locale='pt_BR')
 cal2.grid(column=1, row=2, pady=5)
 cal2.set_date(date.today())
 
@@ -74,6 +76,7 @@ tipos = ["Inicial (rito sumaríssimo)", "Inicial por videoconferência",
 
 stop_thread = False
 
+
 def savePdfs(initialDate, finalDate):
 
     global stop_thread
@@ -98,7 +101,11 @@ def savePdfs(initialDate, finalDate):
         orgaos = orgaos.json()
 
         for data in lista_datas:
-            log("DATA: " + data)
+
+            splitedDate = data.split("-")
+            datetimeDate = datetime(int(splitedDate[0]), int(splitedDate[1]), int(splitedDate[2]))
+            formatedDate = datetimeDate.strftime("%d/%m/%Y")
+            log("DATA: " + formatedDate)
 
             for orgao in orgaos:
 
@@ -125,9 +132,11 @@ def savePdfs(initialDate, finalDate):
                                 log("Obtendo código captcha...")
                                 captchaToken = getCaptchaToken(idProcesso)
 
-                                if not captchaToken:
+                                while not captchaToken:
                                     log("Erro no captcha")
-                                    return
+                                    log("Tentando novo código...")
+                                    captchaToken = getCaptchaToken(idProcesso)
+                                    time.sleep(1)
 
                                 log("Código obtido.")
 
@@ -137,6 +146,7 @@ def savePdfs(initialDate, finalDate):
                                 processo = processo.json()
 
                                 filesProcesso = []
+
                                 if processo.get("itensProcesso"):
                                     filesProcesso = processo.get(
                                         "itensProcesso")
@@ -145,7 +155,6 @@ def savePdfs(initialDate, finalDate):
 
                                 for f in filesProcesso:
                                     if f["titulo"] == "Ata da Audiência" and f.get("documento") == True and f.get("tipoConteudo") == "PDF":
-
                                         idDocument = f["id"]
 
                                 if idDocument != '' and idDocument:
@@ -158,10 +167,21 @@ def savePdfs(initialDate, finalDate):
                                     download.close()
 
                                     keyWords = 0
+                                    emails = []
 
                                     with fitz.open(item["numeroProcesso"] + '.pdf') as pdf:
                                         for pagina in pdf:
-                                            keyWords += pagina.get_text().count('perícia')
+                                            textPage = pagina.get_text()
+                                            keyWords += textPage.count('perícia')
+
+                                            if '@' in textPage:
+                                                match = re.search(r'[\w\.-]+@[a-z0-9\.-]+', textPage)
+                                                emails.append(match.group())
+                                                print(emails)
+                                            else:
+                                                print("Não há emails")
+                                        
+
                                     print("Numero palavras", keyWords)
                                     if keyWords < 2:
                                         os.remove(
@@ -170,7 +190,22 @@ def savePdfs(initialDate, finalDate):
                                             "Documento não corresponde às exigências")
                                     else:
                                         log(
-                                            "Documento " + item["numeroProcesso"] + ".pdf salvo!")
+                                            "Emails processo " + item["numeroProcesso"] + " salvos no arquivo .csv")
+
+                                        f = open('emails_processo_' + item["numeroProcesso"] + '.csv', 'w', newline='', encoding='utf-8')
+                                        w = csv.writer(f)
+                                        
+                                        w.writerow(["Data de consulta do processo", "Número do processo", "1° email", "2° email", "3° email", "4° email", "5° email"])
+
+                                        newrow = [formatedDate, item["numeroProcesso"]]
+                                        for i in emails: newrow.append(i)
+
+                                        w.writerow(newrow)
+
+                                        f.close() 
+                                        
+                                        os.remove(
+                                            item["numeroProcesso"] + '.pdf')
 
                     else:
                         log("Não há processos")
@@ -216,7 +251,7 @@ def init():
 
 
 def stop_inspect():
-    log("Encerando")
+    log("Encerando...")
 
     stop_thread_fn()
 

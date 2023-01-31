@@ -3,7 +3,6 @@ import requests
 import os
 from twocaptcha import TwoCaptcha
 
-
 def saveImageBase64(filename, imageBase64):
     decoded_data = base64.b64decode((imageBase64))
     img_file = open(filename, 'wb')
@@ -32,7 +31,7 @@ def getCaptchaToken(processId):
 
             if req2.get("tokenDesafio"):
                 print("Erro captcha")
-                return getCaptchaToken(processId)
+                return None
             else:
                 print("Acertou captcha")
                 tokenCaptcha = req2headers['captchatoken']
@@ -44,7 +43,7 @@ def getCaptchaToken(processId):
 
 def getCaptchaCode(filename):
     try:
-        solver = TwoCaptcha('ee753880fba88538ae2972eaeb7b4aba')
+        solver = TwoCaptcha('b405caa1b13eb319db4794df3db523de')
 
         print("Getting captcha code...")
 
@@ -60,7 +59,7 @@ def getCaptchaCode(filename):
 
 def getFoundsSolver():
     try:
-        solver = TwoCaptcha('ee753880fba88538ae2972eaeb7b4aba')
+        solver = TwoCaptcha('b405caa1b13eb319db4794df3db523de')
 
         balance = solver.balance()
 
