@@ -10,6 +10,7 @@ import threading
 import time
 import re
 import csv
+import babel.numbers
 
 epoch = 1545925769.9618232
 
@@ -109,6 +110,10 @@ def savePdfs(initialDate, finalDate):
             splitedDate = data.split("-")
             datetimeDate = datetime(int(splitedDate[0]), int(splitedDate[1]), int(splitedDate[2]))
             formatedDate = datetimeDate.strftime("%d/%m/%Y")
+
+            if stop_thread:
+                break
+
             log("DATA: " + formatedDate)
 
             for orgao in orgaos:

@@ -2,4 +2,4 @@ cx_Freeze==6.13.1
 PyMuPDF==1.21.1
 requests==2.25.1
 tkcalendar==1.6.1
-twocaptcha==0.0.1
+2captcha-python==1.1.3
